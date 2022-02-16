@@ -1,11 +1,15 @@
-package transport
+//go:build linux
+// +build linux
+
+package vsock
 
 import (
 	"fmt"
 	"syscall"
 	"time"
 
-	"github.com/linuxkit/virtsock/pkg/vsock"
+	"github.com/Microsoft/hcsshim/internal/guest/transport"
+	vsockpkg "github.com/linuxkit/virtsock/pkg/vsock"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -20,11 +24,11 @@ const (
 // sockets.
 type VsockTransport struct{}
 
-var _ Transport = &VsockTransport{}
+var _ transport.Transport = &VsockTransport{}
 
 // Dial accepts a vsock socket port number as configuration, and
 // returns an unconnected VsockConnection struct.
-func (t *VsockTransport) Dial(port uint32) (Connection, error) {
+func (t *VsockTransport) Dial(port uint32) (transport.Connection, error) {
 	logrus.WithFields(logrus.Fields{
 		"port": port,
 	}).Info("opengcs::VsockTransport::Dial - vsock dial port")
@@ -33,7 +37,7 @@ func (t *VsockTransport) Dial(port uint32) (Connection, error) {
 	// Retry 10 times because vsock.Dial can return connection time out
 	// due to some underlying kernel bug.
 	for i := 0; i < 10; i++ {
-		conn, err := vsock.Dial(vmaddrCidHost, port)
+		conn, err := vsockpkg.Dial(vmaddrCidHost, port)
 		if err == nil {
 			return conn, nil
 		}

@@ -18,7 +18,7 @@ import (
 	"github.com/Microsoft/hcsshim/internal/guest/kmsg"
 	"github.com/Microsoft/hcsshim/internal/guest/runtime/hcsv2"
 	"github.com/Microsoft/hcsshim/internal/guest/runtime/runc"
-	"github.com/Microsoft/hcsshim/internal/guest/transport"
+	"github.com/Microsoft/hcsshim/internal/guest/transport/vsock"
 	"github.com/Microsoft/hcsshim/internal/oc"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/containerd/cgroups"
@@ -245,7 +245,7 @@ func main() {
 	// Continuously log /dev/kmsg
 	go kmsg.ReadForever(kmsg.LogLevel(*kmsgLogLevel))
 
-	tport := &transport.VsockTransport{}
+	tport := &vsock.VsockTransport{}
 	rtime, err := runc.NewRuntime(baseLogPath)
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to initialize new runc runtime")
