@@ -34,17 +34,17 @@ func (t *VsockTransport) Dial(port uint32) (Connection, error) {
 	// due to some underlying kernel bug.
 	for i := 0; i < 10; i++ {
 		conn, err := vsock.Dial(vmaddrCidHost, port)
-		if err == nil {
-			return conn, nil
+		if err != nil {
+			// If the error was ETIMEDOUT retry, otherwise fail.
+			cause := errors.Cause(err)
+			if errno, ok := cause.(syscall.Errno); ok && errno == syscall.ETIMEDOUT {
+				time.Sleep(100 * time.Millisecond)
+				continue
+			} else {
+				return nil, errors.Wrapf(err, "vsock Dial port (%d) failed", port)
+			}
 		}
-		// If the error was ETIMEDOUT retry, otherwise fail.
-		cause := errors.Cause(err)
-		if errno, ok := cause.(syscall.Errno); ok && errno == syscall.ETIMEDOUT {
-			time.Sleep(100 * time.Millisecond)
-			continue
-		} else {
-			return nil, errors.Wrapf(err, "vsock Dial port (%d) failed", port)
-		}
+		return conn, nil
 	}
 	return nil, fmt.Errorf("failed connecting the VsockConnection: can't connect after 10 attempts")
 }
